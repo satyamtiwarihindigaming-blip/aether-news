@@ -1,24 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import PostCard from "./PostCard";
-import { LayoutGrid, Sparkles, Code2, Globe, TrendingUp, Mail, BookOpen, Clock } from "lucide-react";
+import { LayoutGrid, Sparkles, Code2, Globe, TrendingUp, Mail, BookOpen, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 
 export default function Dashboard({ initialPosts }) {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const filteredPosts = activeCategory === "all"
     ? initialPosts
     : initialPosts.filter(post => post.category.toLowerCase() === activeCategory.toLowerCase());
 
-  // First post is highlighted as Featured Post
-  const featuredPost = filteredPosts[0];
-  // Rest of the posts go to the grid list
-  const gridPosts = filteredPosts.slice(1);
+  // Slideshow posts (latest 4 posts)
+  const slidePosts = initialPosts.slice(0, 4);
+
+  // Remaining posts for the main feed grid
+  const gridPosts = filteredPosts;
 
   // Top trending posts list (first 3 posts from initial list)
   const trendingPosts = initialPosts.slice(0, 3);
+
+  // Auto-slide effect for hero banner (5 seconds interval)
+  useEffect(() => {
+    if (slidePosts.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slidePosts.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [slidePosts.length]);
 
   const categories = [
     { id: "all", label: "All Topics", count: initialPosts.length, icon: <LayoutGrid className="w-4 h-4 mr-2" /> },
@@ -37,9 +48,17 @@ export default function Dashboard({ initialPosts }) {
     }
   };
 
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slidePosts.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slidePosts.length) % slidePosts.length);
+  };
+
   return (
     <>
-      {/* Premium Header */}
+      {/* Header */}
       <header className="flex justify-between items-center py-6 border-b border-white/10 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="w-3.5 h-3.5 rounded-full bg-primary-glow shadow-[0_0_15px_#00f2fe] animate-pulse-glow" />
@@ -48,12 +67,86 @@ export default function Dashboard({ initialPosts }) {
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-textSecondary font-semibold">
+          <span className="inline-flex items-center gap-1.5 text-xs text-textSecondary font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-glow" />
-            Connected
+            System Live
           </span>
         </div>
       </header>
+
+      {/* Auto-sliding Interactive Hero Banner Carousel */}
+      {slidePosts.length > 0 && activeCategory === "all" && (
+        <section className="relative w-full h-[380px] md:h-[450px] rounded-3xl overflow-hidden mt-8 border border-white/10 group shadow-2xl">
+          {slidePosts.map((post, index) => (
+            <div
+              key={post.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+              }`}
+            >
+              {/* Background cover image */}
+              <div className="absolute inset-0 bg-zinc-950">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.image_url || post.imageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80"}
+                  alt={post.title}
+                  className="w-full h-full object-cover opacity-40 scale-105 transition-transform duration-10000 group-hover:scale-100"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+              </div>
+
+              {/* Slide content overlay */}
+              <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-16 max-w-2xl z-20">
+                <span className="inline-flex items-center text-xs font-bold text-neonBlue uppercase tracking-wider mb-3">
+                  <Sparkles className="w-3.5 h-3.5 mr-1" /> Trending &bull; {post.category}
+                </span>
+                <h1 className="font-display font-extrabold text-2xl md:text-4xl text-textPrimary leading-tight mb-4 group-hover:text-neonBlue transition-colors duration-200">
+                  {post.title}
+                </h1>
+                <p className="text-textSecondary text-sm md:text-base font-light leading-relaxed mb-6 line-clamp-3">
+                  {post.seo_description || post.summary || post.content}
+                </p>
+                <div className="flex gap-4">
+                  <Link
+                    href={`/post/${post.id}`}
+                    className="inline-flex items-center bg-primary-glow text-background font-bold text-sm px-6 py-3 rounded-xl shadow-lg shadow-neonBlue/10 hover:shadow-neonBlue/30 hover:scale-[1.02] transition-all duration-300"
+                  >
+                    Read Full Story
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Navigation Controls */}
+          <button
+            onClick={prevSlide}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 hover:bg-neonBlue hover:text-background"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 hover:bg-neonBlue hover:text-background"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+
+          {/* Slide Indicator Dots */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2.5 z-30">
+            {slidePosts.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                  index === currentSlide ? "bg-neonBlue w-6" : "bg-white/30"
+                }`}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Main 2-Column Responsive Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 py-10 flex-grow">
@@ -61,41 +154,6 @@ export default function Dashboard({ initialPosts }) {
         {/* Left Column: Main Post Feed (Col span: 8) */}
         <main className="lg:col-span-8 space-y-12">
           
-          {/* Featured Post Card (Hero Highlight) */}
-          {featuredPost && activeCategory === "all" && (
-            <div className="glass-panel rounded-3xl overflow-hidden border border-white/10 group transition-all duration-300">
-              <Link href={`/post/${featuredPost.id}`} className="grid grid-cols-1 md:grid-cols-12 gap-0">
-                <div className="md:col-span-7 h-64 md:h-96 relative overflow-hidden bg-zinc-900">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={featuredPost.image_url || featuredPost.imageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80"}
-                    alt={featuredPost.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
-                  <span className="absolute top-4 left-4 bg-neonPurple text-white text-[10px] font-display font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-                    Featured Story
-                  </span>
-                </div>
-                <div className="md:col-span-5 p-6 md:p-8 flex flex-col justify-center">
-                  <span className="text-[10px] font-bold text-neonBlue uppercase tracking-wider mb-2 block">
-                    {featuredPost.category} &bull; {formatDate(featuredPost.created_at || featuredPost.date)}
-                  </span>
-                  <h2 className="font-display font-bold text-xl md:text-2xl text-textPrimary leading-tight mb-4 group-hover:text-neonBlue transition-colors duration-200">
-                    {featuredPost.title}
-                  </h2>
-                  <p className="text-textSecondary text-sm font-light leading-relaxed mb-6 line-clamp-4">
-                    {featuredPost.seo_description || featuredPost.summary || featuredPost.content}
-                  </p>
-                  <span className="text-xs font-semibold text-neonBlue group-hover:text-neonPurple inline-flex items-center transition-colors duration-200">
-                    Read Featured Post &rarr;
-                  </span>
-                </div>
-              </Link>
-            </div>
-          )}
-
-          {/* Grid list of articles */}
           <div className="space-y-6">
             <h3 className="font-display font-bold text-lg text-textPrimary flex items-center gap-2 mb-4">
               <BookOpen className="w-5 h-5 text-neonBlue" />
@@ -109,8 +167,7 @@ export default function Dashboard({ initialPosts }) {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* If active category is selected, render featured post in grid as well */}
-                {(activeCategory !== "all" ? filteredPosts : gridPosts).map((post) => (
+                {gridPosts.map((post) => (
                   <PostCard key={post.id} post={post} />
                 ))}
               </div>
@@ -121,7 +178,7 @@ export default function Dashboard({ initialPosts }) {
         {/* Right Column: Sidebar (Col span: 4) */}
         <aside className="lg:col-span-4 space-y-8">
           
-          {/* Sidebar Section 1: Categories selector */}
+          {/* Sidebar Section 1: Categories Selector */}
           <div className="glass-panel rounded-3xl p-6 border border-white/10">
             <h4 className="font-display font-bold text-sm text-textPrimary uppercase tracking-wider mb-4 border-b border-white/5 pb-2">
               Discover Topics

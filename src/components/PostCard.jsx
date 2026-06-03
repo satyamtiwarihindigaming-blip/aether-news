@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles, Code2, Cpu, Gamepad2 } from "lucide-react";
+import SafeImage from "./SafeImage";
 
 export default function PostCard({ post }) {
   // Category configuration
@@ -51,16 +52,12 @@ export default function PostCard({ post }) {
         
         {/* Cover Image */}
         <div className="w-full h-48 relative overflow-hidden bg-zinc-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.image_url || post.imageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=60"}
+          <SafeImage
+            src={post.image_url || post.imageUrl}
             alt={post.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fallbackSrc="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=60"
             loading="lazy"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=60";
-            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
         </div>

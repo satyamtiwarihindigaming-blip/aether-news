@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
+import SafeImage from "@/components/SafeImage";
 
 export const revalidate = 3600; // ISR cache validation every hour
 
@@ -135,15 +136,11 @@ export default async function PostPage({ params }) {
 
           {/* Featured Image */}
           <div className="w-full h-80 md:h-[400px] relative rounded-3xl overflow-hidden mb-10 border border-white/10">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={post.image_url || post.imageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&q=80"}
+            <SafeImage
+              src={post.image_url || post.imageUrl}
               alt={post.title}
               className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&q=80";
-              }}
+              fallbackSrc="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&q=80"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
           </div>

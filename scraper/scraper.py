@@ -42,7 +42,8 @@ if GEMINI_KEY:
 FEEDS = [
     {"url": "https://techcrunch.com/feed/", "category": "Tech"},
     {"url": "https://dev.to/feed/tag/ai", "category": "AI"},
-    {"url": "https://dev.to/feed/tag/webdev", "category": "Dev"}
+    {"url": "https://dev.to/feed/tag/webdev", "category": "Dev"},
+    {"url": "https://dev.to/feed/tag/gamedev", "category": "Gaming"}
 ]
 
 def extract_image_url(entry):

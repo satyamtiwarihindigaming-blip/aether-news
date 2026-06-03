@@ -1,5 +1,4 @@
 import "@/styles/globals.css";
-import ThreeBg from "@/components/ThreeBg";
 
 export const metadata = {
   title: "AetherNews | Insights into Future Tech & Engineering",
@@ -23,9 +22,6 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body>
-        {/* 3D Canvas Background */}
-        <ThreeBg />
-
         <div className="relative z-10 min-h-screen flex flex-col max-w-7xl mx-auto px-4 md:px-8">
           {children}
         </div>

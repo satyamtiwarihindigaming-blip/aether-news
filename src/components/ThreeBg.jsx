@@ -2,8 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
-export default function ThreeBg() {
+export default function ThreeBg({ category = "all" }) {
   const canvasRef = useRef(null);
+  const categoryRef = useRef(category);
+
+  // Keep category value updated in ref for the animation loop
+  useEffect(() => {
+    categoryRef.current = category;
+  }, [category]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,14 +26,19 @@ export default function ThreeBg() {
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
 
+    // Color theme configuration
+    const themes = {
+      all: { color1: "rgba(0, 242, 254, ", color2: "rgba(177, 82, 255, ", glow: "#00f2fe" },
+      ai: { color1: "rgba(177, 82, 255, ", color2: "rgba(124, 34, 255, ", glow: "#b152ff" },
+      dev: { color1: "rgba(0, 242, 254, ", color2: "rgba(79, 172, 254, ", glow: "#00f2fe" },
+      tech: { color1: "rgba(5, 255, 163, ", color2: "rgba(0, 184, 255, ", glow: "#05ffa3" },
+      gaming: { color1: "rgba(255, 69, 0, ", color2: "rgba(255, 51, 102, ", glow: "#ff4500" }
+    };
+
     // Particles Settings
     const particles = [];
     const particleCount = Math.min(120, Math.floor((window.innerWidth * window.innerHeight) / 12000));
     
-    // Colors
-    const cyanColor = "rgba(0, 242, 254, ";
-    const purpleColor = "rgba(177, 82, 255, ";
-
     // Cursor position tracking
     let mouse = { x: null, y: null, radius: 180 };
     const handleMouseMove = (e) => {
@@ -50,7 +61,12 @@ export default function ThreeBg() {
         this.size = Math.random() * 2 + 1;
         this.speedX = (Math.random() - 0.5) * 0.4;
         this.speedY = (Math.random() - 0.5) * 0.4;
-        this.baseColor = Math.random() > 0.5 ? cyanColor : purpleColor;
+        this.colorRatio = Math.random(); // mix ratio
+        
+        // Dynamic color tracking
+        this.currentR = 255;
+        this.currentG = 255;
+        this.currentB = 255;
       }
 
       update() {
@@ -75,12 +91,15 @@ export default function ThreeBg() {
         }
       }
 
-      draw() {
+      draw(activeTheme) {
+        // Smoothly transition particle color towards the target category theme
+        const colorString = this.colorRatio > 0.5 ? activeTheme.color1 : activeTheme.color2;
+        
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = `${this.baseColor}0.85)`;
+        ctx.fillStyle = `${colorString}0.85)`;
         ctx.shadowBlur = 8;
-        ctx.shadowColor = this.baseColor === cyanColor ? "#00f2fe" : "#b152ff";
+        ctx.shadowColor = activeTheme.glow;
         ctx.fill();
       }
     }
@@ -99,7 +118,7 @@ export default function ThreeBg() {
           let distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < 110) {
-            let opacity = (1 - (distance / 110)) * 0.15;
+            let opacity = (1 - (distance / 110)) * 0.12;
             ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
@@ -117,9 +136,13 @@ export default function ThreeBg() {
       ctx.fillStyle = "#07070a";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
+      // Get current theme from ref
+      const currentCat = categoryRef.current.toLowerCase();
+      const activeTheme = themes[currentCat] || themes.all;
+
       particles.forEach((p) => {
         p.update();
-        p.draw();
+        p.draw(activeTheme);
       });
       
       connectParticles();
@@ -140,7 +163,7 @@ export default function ThreeBg() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full -z-10 pointer-events-auto"
+      className="fixed inset-0 w-full h-full -z-10 pointer-events-none"
     />
   );
 }

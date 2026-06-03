@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
+import ThreeBg from "@/components/ThreeBg";
 
 export const revalidate = 3600; // ISR cache validation every hour
 
@@ -93,6 +94,8 @@ export default async function PostPage({ params }) {
 
   return (
     <>
+      {/* Category-based dynamic 3D background */}
+      <ThreeBg category={post.category} />
       {/* Header */}
       <header className="flex justify-between items-center py-6 border-b border-white/10 backdrop-blur-md">
         <Link href="/" className="inline-flex items-center text-sm font-semibold text-textSecondary hover:text-neonBlue transition-colors duration-200">

@@ -27,6 +27,8 @@ async function getAllPostsRaw() {
       image_url: post.imageUrl || post.image_url,
       category: post.category,
       seo_description: post.summary || post.seo_description,
+      created_at: post.date || post.created_at,
+      date: post.date || post.created_at,
       source_url: post.sourceUrl || post.source_url
     }));
   } catch {
@@ -117,11 +119,19 @@ export default async function PostPage({ params }) {
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-textMuted" />
-              {new Date(post.created_at || post.date).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
+              {(() => {
+                try {
+                  const d = new Date(post.created_at || post.date);
+                  if (isNaN(d.getTime())) return post.created_at || post.date;
+                  return d.toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+                } catch {
+                  return post.created_at || post.date;
+                }
+              })()}
             </span>
             <span className="flex items-center gap-1.5">
               <User className="w-4 h-4 text-textMuted" />

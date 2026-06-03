@@ -20,6 +20,15 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            if (localStorage.theme === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+              document.documentElement.classList.add('light')
+            } else {
+              document.documentElement.classList.remove('light')
+            }
+          } catch (_) {}
+        `}} />
       </head>
       <body>
         <div className="relative z-10 min-h-screen flex flex-col max-w-7xl mx-auto px-4 md:px-8">

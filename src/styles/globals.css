@@ -3,9 +3,45 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-bg-gradient: radial-gradient(circle at 50% 0%, #151624 0%, #07070a 100%) no-repeat fixed;
+    --color-bg: #090a0f;
+    --color-card: rgba(13, 13, 21, 0.45);
+    --color-card-hover: rgba(22, 22, 38, 0.6);
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-border-glow: #252733;
+    --color-text-primary: #f3f4f6;
+    --color-text-secondary: #9ca3af;
+    --color-text-muted: #6b7280;
+    
+    --color-input-bg: #12131a;
+    --color-header-border: rgba(255, 255, 255, 0.1);
+    --color-category-btn-active-bg: #ffffff;
+    --color-category-btn-active-text: #090a0f;
+  }
+
+  :root.light {
+    --color-bg-gradient: radial-gradient(circle at 50% 0%, #f8fafc 0%, #e2e8f0 100%) no-repeat fixed;
+    --color-bg: #f8fafc;
+    --color-card: rgba(255, 255, 255, 0.75);
+    --color-card-hover: rgba(255, 255, 255, 0.95);
+    --color-border: rgba(15, 23, 42, 0.08);
+    --color-border-glow: #cbd5e1;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748b;
+    
+    --color-input-bg: #e2e8f0;
+    --color-header-border: rgba(15, 23, 42, 0.1);
+    --color-category-btn-active-bg: #0f172a;
+    --color-category-btn-active-text: #ffffff;
+  }
+
   body {
     @apply text-textPrimary font-sans overflow-x-hidden min-h-screen relative;
-    background: radial-gradient(circle at 50% 0%, #151624 0%, #07070a 100%) no-repeat fixed;
+    background: var(--color-bg-gradient);
+    color: var(--color-text-primary);
+    transition: background 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -26,16 +62,16 @@
 
 /* Glassmorphic Panel Styles */
 .glass-panel {
-  background: rgba(13, 13, 21, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   backdrop-filter: blur(16px);
   transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .glass-panel:hover {
-  border-color: rgba(0, 242, 254, 0.25);
-  background: rgba(22, 22, 38, 0.6);
-  box-shadow: 0 15px 35px rgba(0, 242, 254, 0.08);
+  border-color: var(--color-border-glow);
+  background: var(--color-card-hover);
+  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.08);
 }
 
 /* Custom Animations */

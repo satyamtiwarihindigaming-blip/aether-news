@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
 import SafeImage from "@/components/SafeImage";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const revalidate = 3600; // ISR cache validation every hour
 
@@ -97,16 +98,19 @@ export default async function PostPage({ params }) {
   return (
     <>
       {/* Header */}
-      <header className="flex justify-between items-center py-6 border-b border-white/10 backdrop-blur-md">
-        <Link href="/" className="inline-flex items-center text-sm font-semibold text-textSecondary hover:text-white transition-colors duration-200">
+      <header className="flex justify-between items-center py-6 border-b border-headerBorder backdrop-blur-md">
+        <Link href="/" className="inline-flex items-center text-sm font-semibold text-textSecondary hover:text-textPrimary transition-colors duration-200">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Articles
         </Link>
-        <Link href="/" className="flex items-center gap-2">
-          <span className="font-display font-black text-xl tracking-tight text-white">
-            AETHER<span className="text-zinc-400">NEWS</span>
-          </span>
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="font-display font-black text-xl tracking-tight text-textPrimary">
+              AETHER<span className="text-textSecondary">NEWS</span>
+            </span>
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Main Content Area */}
@@ -114,7 +118,7 @@ export default async function PostPage({ params }) {
         <article>
           {/* Metadata */}
           <div className="flex flex-wrap gap-4 items-center text-sm text-textSecondary mb-6">
-            <span className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border border-white/10 bg-white/5 text-textPrimary uppercase tracking-wider">
+            <span className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border border-borderCustom bg-card text-textPrimary uppercase tracking-wider">
               {post.category}
             </span>
             <span className="flex items-center gap-1.5">
@@ -145,7 +149,7 @@ export default async function PostPage({ params }) {
           </h1>
 
           {/* Featured Image */}
-          <div className="w-full h-80 md:h-[400px] relative rounded-3xl overflow-hidden mb-10 border border-white/10">
+          <div className="w-full h-80 md:h-[400px] relative rounded-3xl overflow-hidden mb-10 border border-borderCustom">
             <SafeImage
               src={post.image_url || post.imageUrl}
               alt={post.title}
@@ -163,14 +167,14 @@ export default async function PostPage({ params }) {
           </div>
 
           {/* Actions */}
-          <div className="mt-12 pt-8 border-t border-white/10 flex justify-between items-center">
+          <div className="mt-12 pt-8 border-t border-headerBorder flex justify-between items-center">
             <ShareButton title={post.title} />
           </div>
         </article>
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-8 border-t border-white/10 text-xs text-textMuted mt-12">
+      <footer className="text-center py-8 border-t border-headerBorder text-xs text-textMuted mt-12">
         <p>&copy; 2026 AetherNews. Designed for Developers and Tech Enthusiasts.</p>
       </footer>
     </>

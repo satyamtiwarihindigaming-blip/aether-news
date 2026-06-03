@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import PostCard from "./PostCard";
 import SafeImage from "./SafeImage";
+import ThemeToggle from "./ThemeToggle";
 import { Sparkles, TrendingUp, Mail, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Dashboard({ initialPosts }) {
@@ -71,50 +72,54 @@ export default function Dashboard({ initialPosts }) {
   return (
     <>
       {/* Premium Header */}
-      <header className="flex flex-col md:flex-row justify-between items-center py-6 border-b border-white/10 gap-4">
+      <header className="flex flex-col md:flex-row justify-between items-center py-6 border-b border-headerBorder gap-4">
         {/* Logo and Brand */}
         <Link href="/" className="flex items-center gap-2 group">
-          <span className="font-display font-black text-2xl tracking-tight text-white group-hover:text-neonBlue transition-colors duration-200">
-            AETHER<span className="text-zinc-400 group-hover:text-neonPurple transition-colors duration-200">NEWS</span>
+          <span className="font-display font-black text-2xl tracking-tight text-textPrimary group-hover:text-neonBlue transition-colors duration-200">
+            AETHER<span className="text-textSecondary group-hover:text-neonPurple transition-colors duration-200">NEWS</span>
           </span>
         </Link>
 
-        {/* Search Bar */}
-        <div className="relative w-full md:w-80">
-          <input
-            type="text"
-            placeholder="Search articles..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 pl-10 pr-10 rounded-full bg-zinc-900 border border-white/10 text-sm text-textPrimary placeholder-textMuted focus:outline-none focus:border-neonBlue focus:ring-1 focus:ring-neonBlue transition-all duration-200"
-          />
-          <svg
-            className="absolute left-3.5 top-2.5 w-4 h-4 text-textMuted"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        {/* Search & Theme Actions */}
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          {/* Search Bar */}
+          <div className="relative flex-grow md:flex-grow-0 md:w-80">
+            <input
+              type="text"
+              placeholder="Search articles..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 pl-10 pr-10 rounded-full bg-inputBg border border-borderCustom text-sm text-textPrimary placeholder-textMuted focus:outline-none focus:border-neonBlue focus:ring-1 focus:ring-neonBlue transition-all duration-200"
             />
-          </svg>
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3.5 top-2.5 text-xs text-textMuted hover:text-white"
+            <svg
+              className="absolute left-3.5 top-2.5 w-4 h-4 text-textMuted"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              Clear
-            </button>
-          )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3.5 top-2.5 text-xs text-textMuted hover:text-textPrimary"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <ThemeToggle />
         </div>
       </header>
 
       {/* Category Sub-header Navigation Bar */}
-      <nav className="flex items-center justify-start overflow-x-auto py-4 border-b border-white/5 scrollbar-none gap-2">
+      <nav className="flex items-center justify-start overflow-x-auto py-4 border-b border-borderCustom scrollbar-none gap-2">
         {categories.map((cat) => (
           <button
             key={cat.id}
@@ -123,8 +128,8 @@ export default function Dashboard({ initialPosts }) {
             }}
             className={`flex items-center text-xs font-semibold px-4 py-2 rounded-full transition-all duration-200 whitespace-nowrap border ${
               activeCategory === cat.id
-                ? "bg-white text-zinc-950 border-white"
-                : "text-textSecondary border-white/10 hover:border-white/25 hover:text-textPrimary bg-white/5"
+                ? "bg-categoryBtnActiveBg text-categoryBtnActiveText border-categoryBtnActiveBg"
+                : "text-textSecondary border-borderCustom hover:border-textSecondary hover:text-textPrimary bg-card"
             }`}
           >
             {cat.label}
@@ -134,7 +139,7 @@ export default function Dashboard({ initialPosts }) {
 
       {/* Auto-sliding Interactive Hero Banner Carousel */}
       {slidePosts.length > 0 && activeCategory === "all" && searchQuery === "" && (
-        <section className="relative w-full h-[380px] md:h-[450px] rounded-3xl overflow-hidden mt-8 border border-white/10 group shadow-2xl">
+        <section className="relative w-full h-[380px] md:h-[450px] rounded-3xl overflow-hidden mt-8 border border-borderCustom group shadow-2xl">
           {slidePosts.map((post, index) => (
             <div
               key={post.id}
@@ -180,13 +185,13 @@ export default function Dashboard({ initialPosts }) {
           {/* Navigation Controls */}
           <button
             onClick={prevSlide}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 hover:bg-neonBlue hover:text-background"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-borderCustom flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 hover:bg-neonBlue hover:text-background"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 hover:bg-neonBlue hover:text-background"
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-borderCustom flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 hover:bg-neonBlue hover:text-background"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -239,8 +244,8 @@ export default function Dashboard({ initialPosts }) {
         <aside className="lg:col-span-4 space-y-8">
           
           {/* Sidebar Section 1: Trending / Top Stories */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/10">
-            <h4 className="font-display font-bold text-sm text-textPrimary uppercase tracking-wider mb-4 border-b border-white/5 pb-2 flex items-center gap-1.5">
+          <div className="glass-panel rounded-3xl p-6 border border-borderCustom">
+            <h4 className="font-display font-bold text-sm text-textPrimary uppercase tracking-wider mb-4 border-b border-borderCustom pb-2 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-neonPurple" />
               Trending Now
             </h4>
@@ -266,7 +271,7 @@ export default function Dashboard({ initialPosts }) {
           </div>
 
           {/* Sidebar Section 2: Premium Newsletter Subscription */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/10 bg-gradient-to-br from-zinc-950/80 via-zinc-900/40 to-transparent">
+          <div className="glass-panel rounded-3xl p-6 border border-borderCustom bg-gradient-to-br from-zinc-950/80 via-zinc-900/40 to-transparent">
             <div className="w-10 h-10 rounded-xl bg-neonBlue/10 border border-neonBlue/20 flex items-center justify-center text-neonBlue mb-4">
               <Mail className="w-5 h-5" />
             </div>
@@ -280,7 +285,7 @@ export default function Dashboard({ initialPosts }) {
               <input
                 type="email"
                 placeholder="Email Address"
-                className="w-full px-4 py-2.5 rounded-lg bg-zinc-900 border border-white/10 text-xs focus:outline-none focus:border-neonBlue text-textPrimary"
+                className="w-full px-4 py-2.5 rounded-lg bg-inputBg border border-borderCustom text-xs focus:outline-none focus:border-neonBlue text-textPrimary"
                 required
               />
               <button
@@ -295,7 +300,7 @@ export default function Dashboard({ initialPosts }) {
       </div>
 
       {/* Clean Footer */}
-      <footer className="text-center py-8 border-t border-white/10 text-xs text-textMuted">
+      <footer className="text-center py-8 border-t border-headerBorder text-xs text-textMuted">
         <p>&copy; 2026 AetherNews. All rights reserved.</p>
       </footer>
     </>

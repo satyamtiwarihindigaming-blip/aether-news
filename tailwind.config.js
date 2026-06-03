@@ -8,15 +8,20 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: "#090a0f",
-        card: "#12131a",
-        cardHover: "#181a24",
-        borderGlow: "#252733",
+        background: "var(--color-bg)",
+        card: "var(--color-card)",
+        cardHover: "var(--color-card-hover)",
+        borderGlow: "var(--color-border-glow)",
+        borderCustom: "var(--color-border)",
+        inputBg: "var(--color-input-bg)",
+        headerBorder: "var(--color-header-border)",
+        categoryBtnActiveBg: "var(--color-category-btn-active-bg)",
+        categoryBtnActiveText: "var(--color-category-btn-active-text)",
         neonBlue: "#3b82f6",
         neonPurple: "#6366f1",
-        textPrimary: "#f3f4f6",
-        textSecondary: "#9ca3af",
-        textMuted: "#6b7280"
+        textPrimary: "var(--color-text-primary)",
+        textSecondary: "var(--color-text-secondary)",
+        textMuted: "var(--color-text-muted)"
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

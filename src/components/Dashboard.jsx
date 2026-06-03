@@ -3,24 +3,41 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import PostCard from "./PostCard";
-import { LayoutGrid, Sparkles, Code2, Globe, TrendingUp, Mail, BookOpen, ChevronLeft, ChevronRight, Gamepad2 } from "lucide-react";
+import { Sparkles, TrendingUp, Mail, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Dashboard({ initialPosts }) {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const filteredPosts = activeCategory === "all"
-    ? initialPosts
-    : initialPosts.filter(post => post.category.toLowerCase() === activeCategory.toLowerCase());
+  // Categories list
+  const categories = [
+    { id: "all", label: "All News" },
+    { id: "tech", label: "Future Tech" },
+    { id: "ai", label: "AI" },
+    { id: "dev", label: "Development" },
+    { id: "gaming", label: "Gaming" }
+  ];
+
+  // Filtering posts by both category and search query
+  const filteredPosts = initialPosts.filter(post => {
+    const matchesCategory = activeCategory === "all" || post.category.toLowerCase() === activeCategory.toLowerCase();
+    const matchesSearch = searchQuery.trim() === "" || 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (post.content && post.content.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (post.seo_description && post.seo_description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (post.summary && post.summary.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
 
   // Slideshow posts (latest 4 posts)
   const slidePosts = initialPosts.slice(0, 4);
 
-  // Remaining posts for the main feed grid
+  // Main feed grid posts
   const gridPosts = filteredPosts;
 
-  // Top trending posts list (first 3 posts from initial list)
-  const trendingPosts = initialPosts.slice(0, 3);
+  // Top trending posts list (first 5 posts from initial list)
+  const trendingPosts = initialPosts.slice(0, 5);
 
   // Auto-slide effect for hero banner (5 seconds interval)
   useEffect(() => {
@@ -30,14 +47,6 @@ export default function Dashboard({ initialPosts }) {
     }, 5000);
     return () => clearInterval(interval);
   }, [slidePosts.length]);
-
-  const categories = [
-    { id: "all", label: "All Topics", count: initialPosts.length, icon: <LayoutGrid className="w-4 h-4 mr-2" /> },
-    { id: "ai", label: "Artificial Intelligence", count: initialPosts.filter(p => p.category.toLowerCase() === "ai").length, icon: <Sparkles className="w-4 h-4 mr-2" /> },
-    { id: "dev", label: "Development", count: initialPosts.filter(p => p.category.toLowerCase() === "dev").length, icon: <Code2 className="w-4 h-4 mr-2" /> },
-    { id: "tech", label: "Future Tech", count: initialPosts.filter(p => p.category.toLowerCase() === "tech").length, icon: <Globe className="w-4 h-4 mr-2" /> },
-    { id: "gaming", label: "Gaming Blog", count: initialPosts.filter(p => p.category.toLowerCase() === "gaming").length, icon: <Gamepad2 className="w-4 h-4 mr-2" /> }
-  ];
 
   // Helper date format
   const formatDate = (dateString) => {
@@ -59,24 +68,70 @@ export default function Dashboard({ initialPosts }) {
 
   return (
     <>
-      {/* Header */}
-      <header className="flex justify-between items-center py-6 border-b border-white/10 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="w-3.5 h-3.5 rounded-full bg-primary-glow shadow-[0_0_15px_#00f2fe] animate-pulse-glow" />
-          <span className="font-display font-extrabold text-2xl tracking-wider bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-            AETHER<span className="text-neonBlue">NEWS</span>
+      {/* Premium Header */}
+      <header className="flex flex-col md:flex-row justify-between items-center py-6 border-b border-white/10 gap-4">
+        {/* Logo and Brand */}
+        <Link href="/" className="flex items-center gap-2 group">
+          <span className="font-display font-black text-2xl tracking-tight text-white group-hover:text-neonBlue transition-colors duration-200">
+            AETHER<span className="text-zinc-400 group-hover:text-neonPurple transition-colors duration-200">NEWS</span>
           </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="inline-flex items-center gap-1.5 text-xs text-textSecondary font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-glow" />
-            System Live
-          </span>
+        </Link>
+
+        {/* Search Bar */}
+        <div className="relative w-full md:w-80">
+          <input
+            type="text"
+            placeholder="Search articles..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 pl-10 pr-10 rounded-full bg-zinc-900 border border-white/10 text-sm text-textPrimary placeholder-textMuted focus:outline-none focus:border-neonBlue focus:ring-1 focus:ring-neonBlue transition-all duration-200"
+          />
+          <svg
+            className="absolute left-3.5 top-2.5 w-4 h-4 text-textMuted"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3.5 top-2.5 text-xs text-textMuted hover:text-white"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </header>
 
+      {/* Category Sub-header Navigation Bar */}
+      <nav className="flex items-center justify-start overflow-x-auto py-4 border-b border-white/5 scrollbar-none gap-2">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => {
+              setActiveCategory(cat.id);
+            }}
+            className={`flex items-center text-xs font-semibold px-4 py-2 rounded-full transition-all duration-200 whitespace-nowrap border ${
+              activeCategory === cat.id
+                ? "bg-white text-zinc-950 border-white"
+                : "text-textSecondary border-white/10 hover:border-white/25 hover:text-textPrimary bg-white/5"
+            }`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </nav>
+
       {/* Auto-sliding Interactive Hero Banner Carousel */}
-      {slidePosts.length > 0 && activeCategory === "all" && (
+      {slidePosts.length > 0 && activeCategory === "all" && searchQuery === "" && (
         <section className="relative w-full h-[380px] md:h-[450px] rounded-3xl overflow-hidden mt-8 border border-white/10 group shadow-2xl">
           {slidePosts.map((post, index) => (
             <div
@@ -168,7 +223,9 @@ export default function Dashboard({ initialPosts }) {
             {filteredPosts.length === 0 ? (
               <div className="glass-panel text-center py-20 text-textMuted rounded-3xl flex flex-col items-center justify-center">
                 <BookOpen className="w-12 h-12 mb-3 stroke-[1.5]" />
-                <p className="font-display text-lg">No articles posted in this category.</p>
+                <p className="font-display text-lg">
+                  {searchQuery ? `No articles found matching "${searchQuery}"` : "No articles posted in this category."}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -183,37 +240,7 @@ export default function Dashboard({ initialPosts }) {
         {/* Right Column: Sidebar (Col span: 4) */}
         <aside className="lg:col-span-4 space-y-8">
           
-          {/* Sidebar Section 1: Categories Selector */}
-          <div className="glass-panel rounded-3xl p-6 border border-white/10">
-            <h4 className="font-display font-bold text-sm text-textPrimary uppercase tracking-wider mb-4 border-b border-white/5 pb-2">
-              Discover Topics
-            </h4>
-            <div className="flex flex-col gap-1">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`flex items-center justify-between text-sm font-medium px-4 py-3 rounded-xl transition-all duration-200 ${
-                    activeCategory === cat.id
-                      ? "bg-primary-glow text-background font-bold shadow-md shadow-neonBlue/10"
-                      : "text-textSecondary hover:text-textPrimary hover:bg-white/5"
-                  }`}
-                >
-                  <span className="flex items-center">
-                    {cat.icon}
-                    {cat.label}
-                  </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                    activeCategory === cat.id ? "bg-background/25 text-background" : "bg-white/5 text-textMuted"
-                  }`}>
-                    {cat.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sidebar Section 2: Trending / Top Stories */}
+          {/* Sidebar Section 1: Trending / Top Stories */}
           <div className="glass-panel rounded-3xl p-6 border border-white/10">
             <h4 className="font-display font-bold text-sm text-textPrimary uppercase tracking-wider mb-4 border-b border-white/5 pb-2 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-neonPurple" />
@@ -231,7 +258,7 @@ export default function Dashboard({ initialPosts }) {
                         {post.title}
                       </h5>
                       <span className="text-[10px] text-textMuted uppercase mt-1 block">
-                        {post.category} &bull; 3 min read
+                        {post.category} &bull; {formatDate(post.created_at || post.date)}
                       </span>
                     </div>
                   </div>
@@ -240,7 +267,7 @@ export default function Dashboard({ initialPosts }) {
             </div>
           </div>
 
-          {/* Sidebar Section 3: Premium Newsletter Subscription */}
+          {/* Sidebar Section 2: Premium Newsletter Subscription */}
           <div className="glass-panel rounded-3xl p-6 border border-white/10 bg-gradient-to-br from-zinc-950/80 via-zinc-900/40 to-transparent">
             <div className="w-10 h-10 rounded-xl bg-neonBlue/10 border border-neonBlue/20 flex items-center justify-center text-neonBlue mb-4">
               <Mail className="w-5 h-5" />

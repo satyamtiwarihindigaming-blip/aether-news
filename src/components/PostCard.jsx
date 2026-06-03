@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles, Code2, Globe } from "lucide-react";
+import { ArrowRight, Sparkles, Code2, Cpu, Gamepad2 } from "lucide-react";
 
 export default function PostCard({ post }) {
   // Category configuration
@@ -13,11 +13,17 @@ export default function PostCard({ post }) {
       case "dev":
         return {
           icon: <Code2 className="w-3.5 h-3.5 mr-1" />,
-          badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/25",
+          badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
         };
+      case "gaming":
+        return {
+          icon: <Gamepad2 className="w-3.5 h-3.5 mr-1" />,
+          badge: "bg-amber-500/10 text-amber-400 border-amber-500/25",
+        };
+      case "tech":
       default:
         return {
-          icon: <Globe className="w-3.5 h-3.5 mr-1" />,
+          icon: <Cpu className="w-3.5 h-3.5 mr-1" />,
           badge: "bg-blue-500/10 text-blue-400 border-blue-500/25",
         };
     }

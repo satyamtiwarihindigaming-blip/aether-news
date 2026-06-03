@@ -2,8 +2,8 @@ name: Tech News Automation Engine
 
 on:
   schedule:
-    # Runs exactly 3 times a day (9:00 AM, 3:00 PM, 9:00 PM UTC)
-    - cron: '0 9,15,21 * * *'
+    # Runs every 3 hours (8 times a day)
+    - cron: '0 */3 * * *'
   workflow_dispatch:
     # Allows manual triggering from the GitHub Actions tab
 
@@ -31,6 +31,7 @@ jobs:
 
     - name: Execute Scraper Pipeline
       env:
+        GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}

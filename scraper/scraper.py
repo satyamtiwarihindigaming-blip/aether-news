@@ -1,12 +1,13 @@
 import os
 import re
 import json
+import time
 import requests
 import feedparser
 import cloudinary
 import cloudinary.uploader
-import google.generativeai as genai
 import urllib.parse
+import random
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -14,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Configuration
-GEMINI_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_KEY = os.getenv("GROQ_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -33,10 +34,6 @@ if CLOUDINARY_NAME and CLOUDINARY_API_KEY and CLOUDINARY_SECRET:
         api_secret=CLOUDINARY_SECRET,
         secure=True
     )
-
-# Configure Gemini SDK
-if GEMINI_KEY:
-    genai.configure(api_key=GEMINI_KEY)
 
 # Feeds list to scrape
 FEEDS = [
@@ -64,49 +61,122 @@ def extract_image_url(entry):
     
     return None
 
-def rewrite_with_gemini(original_title, original_content, category):
-    """Uses Google Gemini API to rewrite the article in a viral tech-blogger tone."""
-    if not GEMINI_KEY:
-        print("[Skipping Gemini] GEMINI_API_KEY is not configured in .env.")
+UNSPLASH_FALLBACKS = {
+    "AI": [
+        "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=800&auto=format&fit=crop&q=80"
+    ],
+    "Dev": [
+        "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80"
+    ],
+    "Gaming": [
+        "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1612287230202-1bf1d85d1bdf?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&auto=format&fit=crop&q=80"
+    ],
+    "Tech": [
+        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80"
+    ]
+}
+
+def get_fallback_image(category):
+    """Returns a random high-res Unsplash image URL for the given category."""
+    images = UNSPLASH_FALLBACKS.get(category, UNSPLASH_FALLBACKS["Tech"])
+    return random.choice(images)
+
+def is_duplicate(source_url):
+    """Checks if the article already exists in Supabase or local fallback database."""
+    # 1. Check Supabase if configured
+    if SUPABASE_URL and SUPABASE_KEY:
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json"
+        }
+        try:
+            encoded_url = urllib.parse.quote(source_url)
+            check_url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/posts?source_url=eq.{encoded_url}&select=id"
+            res = requests.get(check_url, headers=headers, timeout=10)
+            if res.status_code == 200:
+                data = res.json()
+                if len(data) > 0:
+                    return True
+        except Exception as e:
+            print(f"Supabase duplicate check failed: {e}")
+
+    # 2. Check local fallback database
+    fallback_file = "posts.json"
+    if os.path.exists(fallback_file):
+        try:
+            with open(fallback_file, 'r', encoding='utf-8') as f:
+                posts = json.load(f)
+                if any(p.get('sourceUrl') == source_url or p.get('source_url') == source_url for p in posts):
+                    return True
+        except Exception as e:
+            print(f"Local duplicate check failed: {e}")
+
+    return False
+
+def rewrite_with_groq(original_title, original_content, category):
+    """Uses Groq API (Llama 3.1 8B model) to rewrite the article in a premium, engaging, human tech-blogger tone."""
+    if not GROQ_KEY:
+        print("[Skipping Groq] GROQ_API_KEY is not configured.")
         return original_title, original_content, f"Read the latest {category} update on our blog."
 
-    try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        prompt = f"""
-        You are an expert viral tech blogger and SEO specialist. 
-        Analyze the following article title and details.
-        
-        Title: {original_title}
-        Content Details: {original_content}
-        Category: {category}
-        
-        Tasks:
-        1. Write a catchy, click-worthy, modern headline. Do not use quotes around it.
-        2. Write a highly engaging, professional yet conversational blog post summarizing this content. Use markdown and structure it with paragraphs.
-        3. Write a short, powerful SEO meta description (max 150 characters).
-        
-        Return your response strictly in the following JSON format:
-        {{
-            "title": "Your rewritten headline here",
-            "content": "Your full rewritten blog article here with paragraphs separated by newlines",
-            "seo_description": "Your SEO meta description here"
-        }}
-        """
-        response = model.generate_content(prompt)
-        
-        # Clean potential markdown wrapping around JSON output
-        text = response.text.strip()
-        if text.startswith("```json"):
-            text = text[7:]
-        if text.endswith("```"):
-            text = text[:-3]
-        
-        data = json.loads(text.strip())
-        return data.get("title"), data.get("content"), data.get("seo_description")
-    except Exception as e:
-        print(f"Error calling Gemini LLM rewriter: {e}")
-        # Return fallback values
-        return original_title, original_content, f"Latest news about {original_title} for {category} enthusiasts."
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    prompt = f"""
+    You are a professional human tech blogger. Rewrite this article to be engaging and human-sounding (under 250 words).
+    
+    Title: {original_title}
+    Details: {original_content}
+    Category: {category}
+    
+    JSON Format to return:
+    {{
+        "title": "catchy title without quotes",
+        "content": "engaging summary (2-3 paragraphs)",
+        "seo_description": "seo description (max 150 chars)"
+    }}
+    """
+    
+    payload = {
+        "model": "llama-3.1-8b-instant",
+        "messages": [{"role": "user", "content": prompt}],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.7,
+        "max_tokens": 1024
+    }
+
+    for attempt in range(1, 4):
+        try:
+            res = requests.post(url, json=payload, headers=headers, timeout=20)
+            if res.status_code == 200:
+                data = res.json()
+                content_text = data['choices'][0]['message']['content'].strip()
+                parsed_data = json.loads(content_text)
+                return parsed_data.get("title"), parsed_data.get("content"), parsed_data.get("seo_description")
+            elif res.status_code == 429:
+                print(f"[Rate Limited] Groq 429. Attempt {attempt} of 3. Waiting 15 seconds to cool down...")
+                time.sleep(15)
+            else:
+                raise Exception(f"Groq API returned HTTP {res.status_code}: {res.text}")
+        except Exception as e:
+            print(f"Error on Groq API call (attempt {attempt}/3): {e}")
+            if attempt < 3:
+                time.sleep(5)
+            
+    print("All Groq API rewrite attempts failed. Falling back to original content.")
+    return original_title, original_content, f"Latest news about {original_title} for {category} enthusiasts."
 
 def upload_to_cloudinary(image_url):
     """Uploads the source image to Cloudinary and returns a secure optimized CDN URL."""
@@ -248,23 +318,33 @@ def run_pipeline():
         print(f"\nProcessing feed: {feed_url}")
         feed = feedparser.parse(feed_url)
         
-        # Scrape top 2 entries per feed to avoid API limits during automation runs
-        for entry in feed.entries[:2]:
-            title = entry.get('title')
-            content = entry.get('summary', '') or entry.get('description', '')
+        # Scrape top 6 entries per feed to compile a rich catalog of posts
+        for entry in feed.entries[:6]:
             source_url = entry.get('link')
+            title = entry.get('title')
+            
+            # Check duplicate BEFORE making any API calls (Cloudinary / Groq)
+            if is_duplicate(source_url):
+                print(f"Article already exists. Skipping: {title}")
+                continue
+                
+            content = entry.get('summary', '') or entry.get('description', '')
             
             # Clean up HTML tags from text contents
             clean_content = re.sub(r'<[^>]+>', '', content)
             
-            print(f"\nFound Post: {title}")
+            print(f"\nProcessing new post: {title}")
             
-            # 1. Image extraction & Cloudinary upload
+            # 1. Image extraction & Cloudinary upload (with category fallback)
             raw_img = extract_image_url(entry)
+            if not raw_img:
+                raw_img = get_fallback_image(category)
+                print(f"No image in RSS feed. Assigned fallback Unsplash image: {raw_img}")
+                
             cloudinary_img = upload_to_cloudinary(raw_img)
             
-            # 2. Gemini AI Rewriter & Meta Tag Optimization
-            new_title, rewritten_body, seo_meta = rewrite_with_gemini(title, clean_content, category)
+            # 2. Groq Llama AI Rewriter & Meta Tag Optimization
+            new_title, rewritten_body, seo_meta = rewrite_with_groq(title, clean_content, category)
             
             # 3. Save to database (Supabase / local fallback)
             push_to_supabase(
@@ -275,6 +355,10 @@ def run_pipeline():
                 seo_description=seo_meta,
                 source_url=source_url
             )
+            
+            # 4. Pace requests to avoid Groq rate limit (TPM/RPM limits)
+            print("Pacing pipeline, sleeping for 2 seconds...")
+            time.sleep(2)
 
     print("\n========================================")
     print("News Pipeline Run Finished.")

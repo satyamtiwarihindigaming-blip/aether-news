@@ -95,16 +95,15 @@ export default async function PostPage({ params }) {
     <>
       {/* Header */}
       <header className="flex justify-between items-center py-6 border-b border-white/10 backdrop-blur-md">
-        <Link href="/" className="inline-flex items-center text-sm font-semibold text-textSecondary hover:text-neonBlue transition-colors duration-200">
+        <Link href="/" className="inline-flex items-center text-sm font-semibold text-textSecondary hover:text-white transition-colors duration-200">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
+          Back to Articles
         </Link>
-        <div className="flex items-center gap-3">
-          <div className="w-3.5 h-3.5 rounded-full bg-primary-glow shadow-[0_0_15px_#00f2fe] animate-pulse-glow" />
-          <span className="font-display font-extrabold text-xl tracking-wider bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-            AETHER<span className="text-neonBlue">NEWS</span>
+        <Link href="/" className="flex items-center gap-2">
+          <span className="font-display font-black text-xl tracking-tight text-white">
+            AETHER<span className="text-zinc-400">NEWS</span>
           </span>
-        </div>
+        </Link>
       </header>
 
       {/* Main Content Area */}
@@ -112,7 +111,7 @@ export default async function PostPage({ params }) {
         <article>
           {/* Metadata */}
           <div className="flex flex-wrap gap-4 items-center text-sm text-textSecondary mb-6">
-            <span className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border border-neonBlue/20 bg-neonBlue/5 text-neonBlue uppercase tracking-wider">
+            <span className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border border-white/10 bg-white/5 text-textPrimary uppercase tracking-wider">
               {post.category}
             </span>
             <span className="flex items-center gap-1.5">
@@ -125,7 +124,7 @@ export default async function PostPage({ params }) {
             </span>
             <span className="flex items-center gap-1.5">
               <User className="w-4 h-4 text-textMuted" />
-              Aether Editorial Team
+              By Aether News Staff
             </span>
           </div>
 

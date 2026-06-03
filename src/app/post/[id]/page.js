@@ -125,7 +125,7 @@ export default async function PostPage({ params }) {
             </span>
             <span className="flex items-center gap-1.5">
               <User className="w-4 h-4 text-textMuted" />
-              Autonomous Agent
+              Aether Editorial Team
             </span>
           </div>
 
@@ -161,7 +161,7 @@ export default async function PostPage({ params }) {
 
       {/* Footer */}
       <footer className="text-center py-8 border-t border-white/10 text-xs text-textMuted mt-12">
-        <p>&copy; 2026 AetherNews. Powered by Next.js & Google Gemini Automation.</p>
+        <p>&copy; 2026 AetherNews. Designed for Developers and Tech Enthusiasts.</p>
       </footer>
     </>
   );

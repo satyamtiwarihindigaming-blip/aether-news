@@ -2,12 +2,12 @@ import "@/styles/globals.css";
 import ThreeBg from "@/components/ThreeBg";
 
 export const metadata = {
-  title: "AetherNews | Autonomous AI & Tech Feed",
-  description: "Experience the future of automated tech news. Dark mode glassmorphic dashboard showcasing real-time automated tech content.",
-  keywords: ["AI", "Tech", "Automation", "Web Scraping", "3D Web", "Future Technology"],
+  title: "AetherNews | Insights into Future Tech & Engineering",
+  description: "A high-fidelity editorial feed focusing on engineering developments, software design trends, and next-generation technology breakthroughs.",
+  keywords: ["Software Engineering", "Tech News", "AI Insights", "WebGPU", "Next.js", "Edge Computing"],
   openGraph: {
-    title: "AetherNews | Autonomous AI & Tech Feed",
-    description: "A gorgeous, autonomous tech and AI news feed updated daily by AI agents.",
+    title: "AetherNews | Tech & Engineering Journal",
+    description: "High-fidelity summaries and editorial insights on the latest tech innovations and software paradigms.",
     type: "website",
     locale: "en_US",
   },

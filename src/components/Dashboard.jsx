@@ -11,6 +11,9 @@ export default function Dashboard({ initialPosts }) {
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
   // Categories list
   const categories = [
@@ -49,6 +52,33 @@ export default function Dashboard({ initialPosts }) {
     }, 5000);
     return () => clearInterval(interval);
   }, [slidePosts.length]);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setMessage('Please enter a valid email.');
+      return;
+    }
+    setLoading(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMessage('Thank you for subscribing! Please check your inbox.');
+      } else {
+        setMessage(data.error || 'Subscription failed.');
+      }
+    } catch (err) {
+      setMessage('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Helper date format
   const formatDate = (dateString) => {
@@ -281,20 +311,24 @@ export default function Dashboard({ initialPosts }) {
             <p className="text-xs text-textSecondary font-light leading-relaxed mb-4">
               Get high-fidelity technical writeups and future engineering insights directly in your inbox weekly.
             </p>
-            <form onSubmit={(e) => { e.preventDefault(); alert("Subscription successful!"); }} className="space-y-2">
+            <form onSubmit={handleSubscribe} className="space-y-2">
               <input
                 type="email"
                 placeholder="Email Address"
                 className="w-full px-4 py-2.5 rounded-lg bg-inputBg border border-borderCustom text-xs focus:outline-none focus:border-neonBlue text-textPrimary"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
               <button
                 type="submit"
                 className="w-full py-2.5 rounded-lg bg-primary-glow text-background font-bold text-xs shadow-md shadow-neonBlue/5 hover:shadow-neonBlue/25 hover:scale-[1.01] transition-all duration-200"
+                disabled={loading}
               >
-                Join Newsletter
+                {loading ? "Submitting..." : "Join Newsletter"}
               </button>
             </form>
+            {message && <p className="text-sm text-textPrimary mt-2">{message}</p>}
           </div>
         </aside>
       </div>

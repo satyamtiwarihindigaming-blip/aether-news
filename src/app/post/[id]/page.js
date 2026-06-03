@@ -3,7 +3,8 @@ import path from "path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, ExternalLink, Calendar, User } from "lucide-react";
+import { ArrowLeft, Calendar, User } from "lucide-react";
+import ShareButton from "@/components/ShareButton";
 
 export const revalidate = 3600; // ISR cache validation every hour
 
@@ -153,15 +154,7 @@ export default async function PostPage({ params }) {
 
           {/* Actions */}
           <div className="mt-12 pt-8 border-t border-white/10 flex justify-between items-center">
-            <a
-              href={post.source_url || post.sourceUrl || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-primary-glow text-background font-bold px-6 py-3 rounded-xl shadow-lg shadow-neonBlue/20 hover:scale-[1.02] hover:shadow-neonBlue/45 transition-all duration-300"
-            >
-              Read Original Article
-              <ExternalLink className="w-4.5 h-4.5" />
-            </a>
+            <ShareButton title={post.title} />
           </div>
         </article>
       </main>

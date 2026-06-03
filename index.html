@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- SEO Meta Tags -->
+  <title>AetherNews | Autonomous AI & Tech Feed</title>
+  <meta name="description" content="A gorgeous, autonomous tech and AI news feed updated daily by AI agents and web scraping.">
+  <meta name="keywords" content="AI, Tech, Automation, Web Scraping, 3D Web, Future Technology">
+  <meta name="author" content="Antigravity">
+  
+  <!-- OpenGraph Card for Social Media -->
+  <meta property="og:title" content="AetherNews | Autonomous AI & Tech Feed">
+  <meta property="og:description" content="Experience the future of automated news. Gorgeous 3D glassmorphic dashboard showcasing real-time tech content.">
+  <meta property="og:type" content="website">
+  
+  <!-- Google Fonts (Outfit & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Three.js CDN for 3D Background -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- CSS Style -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- 3D Canvas Background -->
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header class="main-header">
+      <div class="logo-container">
+        <div class="logo-orb"></div>
+        <span class="logo-text">AETHER<span>NEWS</span></span>
+      </div>
+      <div class="header-actions">
+        <span class="status-indicator">
+          <span class="status-dot pulsing"></span>
+          <span class="status-label">Autonomous Scraper: Active</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-badge">
+        <i data-lucide="cpu" class="badge-icon"></i>
+        <span>AI-Curated Feed</span>
+      </div>
+      <h1 class="hero-title">
+        The Future of <span class="gradient-text">Automated Tech News</span>
+      </h1>
+      <p class="hero-description">
+        Scraped daily, filtered for quality, and displayed in an interactive 3D universe. Experience real-time technology insights.
+      </p>
+      
+      <!-- Stats / Info Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-val" id="stat-posts">0</span>
+          <span class="stat-label">Total Articles</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-val" id="stat-updates">Daily</span>
+          <span class="stat-label">Sync Speed</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-val" id="stat-status">100%</span>
+          <span class="stat-label">Automated</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters and Post Navigation -->
+    <section class="filter-section">
+      <div class="filter-container">
+        <button class="filter-btn active" data-category="all">
+          <i data-lucide="layout-grid" class="btn-icon"></i> All Articles
+        </button>
+        <button class="filter-btn" data-category="ai">
+          <i data-lucide="sparkles" class="btn-icon"></i> Artificial Intelligence
+        </button>
+        <button class="filter-btn" data-category="dev">
+          <i data-lucide="code-2" class="btn-icon"></i> Development
+        </button>
+        <button class="filter-btn" data-category="tech">
+          <i data-lucide="globe" class="btn-icon"></i> Future Tech
+        </button>
+      </div>
+    </section>
+
+    <!-- Main Content Grid -->
+    <main class="content-grid-container">
+      <div id="posts-grid" class="posts-grid">
+        <!-- Dynamic posts will be injected here -->
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <p>&copy; 2026 AetherNews. Powered by Antigravity Automation & GitHub Actions.</p>
+    </footer>
+
+  </div>
+
+  <!-- Post Detail Modal -->
+  <div id="post-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button class="modal-close-btn" id="modal-close">
+        <i data-lucide="x"></i>
+      </button>
+      <div class="modal-header-img" id="modal-img"></div>
+      <div class="modal-body">
+        <div class="modal-meta">
+          <span class="post-tag" id="modal-tag">Category</span>
+          <span class="post-date" id="modal-date">Date</span>
+        </div>
+        <h2 class="modal-title" id="modal-title">Title</h2>
+        <div class="modal-content" id="modal-content">
+          <!-- Article text goes here -->
+        </div>
+        <div class="modal-actions">
+          <a href="#" target="_blank" class="read-more-link-btn" id="modal-source-btn">
+            Read Original Article <i data-lucide="external-link"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="background.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

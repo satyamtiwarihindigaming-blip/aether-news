@@ -8,6 +8,7 @@ import ShareButton from "@/components/ShareButton";
 import SafeImage from "@/components/SafeImage";
 import ThemeToggle from "@/components/ThemeToggle";
 import LiteYouTube from "@/components/LiteYouTube";
+import BilingualContent from "@/components/BilingualContent";
 
 export const revalidate = 3600; // ISR cache validation every hour
 
@@ -25,7 +26,9 @@ async function getAllPostsRaw() {
     return JSON.parse(contents).map(post => ({
       id: String(post.id),
       title: post.title,
+      title_hi: post.title_hi || "",
       content: post.content,
+      content_hi: post.content_hi || "",
       image_url: post.imageUrl || post.image_url,
       video_url: post.videoUrl || post.video_url || null,
       category: post.category,
@@ -94,8 +97,6 @@ export default async function PostPage({ params }) {
   if (!post) {
     notFound();
   }
-
-  const paragraphs = post.content.split("\n\n");
 
   return (
     <>
@@ -166,12 +167,13 @@ export default async function PostPage({ params }) {
             <LiteYouTube videoUrl={post.video_url} title={post.title} />
           )}
 
-          {/* Body Article Content */}
-          <div className="text-textSecondary text-base md:text-lg leading-relaxed font-light space-y-6">
-            {paragraphs.map((p, index) => (
-              <p key={index}>{p}</p>
-            ))}
-          </div>
+          {/* Bilingual Article Body */}
+          <BilingualContent
+            contentEn={post.content}
+            contentHi={post.content_hi || ""}
+            titleEn={post.title}
+            titleHi={post.title_hi || ""}
+          />
 
           {/* Actions */}
           <div className="mt-12 pt-8 border-t border-headerBorder flex justify-between items-center">

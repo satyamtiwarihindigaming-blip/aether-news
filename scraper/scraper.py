@@ -4,256 +4,216 @@ import json
 import time
 import requests
 import feedparser
-import cloudinary
-import cloudinary.uploader
 import urllib.parse
 import random
 from datetime import datetime
 from dotenv import load_dotenv
 
-# Load local environment variables
 load_dotenv()
 
-# API Configuration
-GROQ_KEY = os.getenv("GROQ_API_KEY")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# ── API Keys ──────────────────────────────────────────────
+GROQ_KEY        = os.getenv("GROQ_API_KEY")
+SUPABASE_URL    = os.getenv("SUPABASE_URL")
+SUPABASE_KEY    = os.getenv("SUPABASE_KEY")
+TELEGRAM_TOKEN  = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID= os.getenv("TELEGRAM_CHAT_ID")
 
-CLOUDINARY_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
-CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
-CLOUDINARY_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+# ── Cloudinary (optional image CDN) ───────────────────────
+try:
+    import cloudinary
+    import cloudinary.uploader
+    CLOUDINARY_NAME   = os.getenv("CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY= os.getenv("CLOUDINARY_API_KEY")
+    CLOUDINARY_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+    if CLOUDINARY_NAME and CLOUDINARY_API_KEY and CLOUDINARY_SECRET:
+        cloudinary.config(
+            cloud_name=CLOUDINARY_NAME,
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_SECRET,
+            secure=True
+        )
+        CLOUDINARY_OK = True
+    else:
+        CLOUDINARY_OK = False
+except ImportError:
+    CLOUDINARY_OK = False
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
-# Configure Cloudinary SDK
-if CLOUDINARY_NAME and CLOUDINARY_API_KEY and CLOUDINARY_SECRET:
-    cloudinary.config(
-        cloud_name=CLOUDINARY_NAME,
-        api_key=CLOUDINARY_API_KEY,
-        api_secret=CLOUDINARY_SECRET,
-        secure=True
-    )
-
-# Feeds list to scrape
+# ── RSS Feeds ─────────────────────────────────────────────
 FEEDS = [
-    {"url": "https://techcrunch.com/feed/", "category": "Tech"},
-    {"url": "https://dev.to/feed/tag/ai", "category": "AI"},
-    {"url": "https://dev.to/feed/tag/webdev", "category": "Dev"},
-    {"url": "https://www.pcgamer.com/rss/", "category": "Gaming"},
-    {"url": "https://feeds.feedburner.com/ign/news", "category": "Gaming"},
-    {"url": "https://news.google.com/rss/search?q=GTA+6+OR+%22Grand+Theft+Auto+6%22+OR+%22Grand+Theft+Auto+VI%22&hl=en-US&gl=US&ceid=US:en", "category": "Gaming"}
+    {"url": "https://news.google.com/rss/search?q=GTA+6+OR+%22Grand+Theft+Auto+VI%22&hl=en-US&gl=US&ceid=US:en", "category": "Gaming"},
+    {"url": "https://www.pcgamer.com/rss/",                        "category": "Gaming"},
+    {"url": "https://feeds.feedburner.com/ign/news",               "category": "Gaming"},
+    {"url": "https://techcrunch.com/feed/",                        "category": "Tech"},
+    {"url": "https://dev.to/feed/tag/ai",                          "category": "AI"},
+    {"url": "https://dev.to/feed/tag/webdev",                      "category": "Dev"},
 ]
 
-def fetch_youtube_video(query):
-    """Scrapes YouTube search results for a video matching the query and returns the watch URL."""
-    try:
-        search_query = urllib.parse.quote(query)
-        url = f"https://www.youtube.com/results?search_query={search_query}"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9"
-        }
-        print(f"Searching YouTube for: {query}")
-        res = requests.get(url, headers=headers, timeout=10)
-        if res.status_code == 200:
-            # Locate all videoId strings in the response HTML
-            video_ids = re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', res.text)
-            if video_ids:
-                video_url = f"https://www.youtube.com/watch?v={video_ids[0]}"
-                print(f"Found YouTube Video: {video_url} for query '{query}'")
-                return video_url
-    except Exception as e:
-        print(f"Error fetching YouTube video for query '{query}': {e}")
-    return None
-
-
-def extract_image_url(entry):
-    """Attempts to extract an image from various RSS feed elements."""
-    # Method 1: Check media content tags
-    if 'media_content' in entry and len(entry.media_content) > 0:
-        return entry.media_content[0].get('url')
-    # Method 2: Check standard links for images
-    if 'links' in entry:
-        for link in entry.links:
-            if 'image' in link.get('type', ''):
-                return link.get('href')
-    # Method 3: Search HTML body for img tags
-    body = entry.get('summary', '') or entry.get('description', '')
-    match = re.search(r'<img[^>]+src="([^">]+)"', body)
-    if match:
-        return match.group(1)
-    
-    return None
-
-UNSPLASH_FALLBACKS = {
+# ── Unsplash fallback images per category ─────────────────
+UNSPLASH = {
+    "Gaming": [
+        "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1612287230202-1bf1d85d1bdf?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=800&auto=format&fit=crop&q=80",
+    ],
+    "Tech": [
+        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&auto=format&fit=crop&q=80",
+    ],
     "AI": [
         "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=80",
         "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=800&auto=format&fit=crop&q=80"
+        "https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=800&auto=format&fit=crop&q=80",
     ],
     "Dev": [
         "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80",
         "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80"
+        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80",
     ],
-    "Gaming": [
-        "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1612287230202-1bf1d85d1bdf?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&auto=format&fit=crop&q=80"
-    ],
-    "Tech": [
-        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80"
-    ]
 }
 
 def get_fallback_image(category):
-    """Returns a random high-res Unsplash image URL for the given category."""
-    images = UNSPLASH_FALLBACKS.get(category, UNSPLASH_FALLBACKS["Tech"])
-    return random.choice(images)
+    pool = UNSPLASH.get(category, UNSPLASH["Tech"])
+    return random.choice(pool)
 
-def is_duplicate(source_url):
-    """Checks if the article already exists in Supabase or local fallback database."""
-    # 1. Check Supabase if configured
-    if SUPABASE_URL and SUPABASE_KEY:
-        headers = {
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json"
-        }
-        try:
-            encoded_url = urllib.parse.quote(source_url)
-            check_url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/posts?source_url=eq.{encoded_url}&select=id"
-            res = requests.get(check_url, headers=headers, timeout=10)
-            if res.status_code == 200:
-                data = res.json()
-                if len(data) > 0:
-                    return True
-        except Exception as e:
-            print(f"Supabase duplicate check failed: {e}")
+# ── Image helpers ─────────────────────────────────────────
+def extract_image_url(entry):
+    if 'media_content' in entry and entry.media_content:
+        return entry.media_content[0].get('url')
+    if 'links' in entry:
+        for lnk in entry.links:
+            if 'image' in lnk.get('type', ''):
+                return lnk.get('href')
+    body = entry.get('summary', '') or entry.get('description', '')
+    m = re.search(r'<img[^>]+src="([^">]+)"', body)
+    if m:
+        return m.group(1)
+    return None
 
-    # 2. Check local fallback database
-    fallback_file = "posts.json"
-    if os.path.exists(fallback_file):
-        try:
-            with open(fallback_file, 'r', encoding='utf-8') as f:
-                posts = json.load(f)
-                if any(p.get('sourceUrl') == source_url or p.get('source_url') == source_url for p in posts):
-                    return True
-        except Exception as e:
-            print(f"Local duplicate check failed: {e}")
+def upload_to_cloudinary(image_url):
+    if not image_url or not CLOUDINARY_OK:
+        return image_url
+    try:
+        print(f"  Uploading to Cloudinary: {image_url[:60]}...")
+        res = cloudinary.uploader.upload(
+            image_url,
+            folder="aether_news",
+            transformation=[{"width": 800, "crop": "limit"}, {"quality": "auto"}, {"fetch_format": "auto"}]
+        )
+        return res.get("secure_url", image_url)
+    except Exception as e:
+        print(f"  Cloudinary upload failed: {e}")
+        return image_url
 
-    return False
+# ── YouTube video search ───────────────────────────────────
+def fetch_youtube_video(query):
+    try:
+        q = urllib.parse.quote(query + " trailer OR gameplay OR review")
+        url = f"https://www.youtube.com/results?search_query={q}"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        res = requests.get(url, headers=headers, timeout=10)
+        if res.status_code == 200:
+            ids = re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', res.text)
+            if ids:
+                vid = f"https://www.youtube.com/watch?v={ids[0]}"
+                print(f"  YouTube: {vid}")
+                return vid
+    except Exception as e:
+        print(f"  YouTube search failed: {e}")
+    return None
 
-def rewrite_with_groq(original_title, original_content, category):
-    """Uses Groq API (Llama 3.1 8B model) to rewrite the article in a premium, engaging, human tech-blogger tone."""
+# ── Groq AI rewriter — English + Hindi bilingual ──────────
+def rewrite_bilingual(original_title, original_content, category):
     if not GROQ_KEY:
-        print("[Skipping Groq] GROQ_API_KEY is not configured.")
-        return original_title, original_content, f"Read the latest {category} update on our blog."
+        print("  [Groq] No API key — skipping rewrite.")
+        return original_title, original_content, original_content[:100], original_title, original_content
 
     url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {GROQ_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    prompt = f"""
-    You are a professional human tech blogger. Rewrite this article to be engaging and human-sounding (under 250 words).
-    
-    Title: {original_title}
-    Details: {original_content}
-    Category: {category}
-    
-    JSON Format to return:
-    {{
-        "title": "catchy title without quotes",
-        "content": "engaging summary (2-3 paragraphs)",
-        "seo_description": "seo description (max 150 chars)"
-    }}
-    """
-    
+    headers = {"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"}
+
+    prompt = f"""You are a bilingual tech/gaming blogger. Rewrite this article in TWO languages.
+
+Title: {original_title}
+Content: {original_content[:1500]}
+Category: {category}
+
+Return ONLY this JSON (no extra text):
+{{
+  "title_en": "catchy English title",
+  "content_en": "2-3 engaging English paragraphs (under 300 words)",
+  "seo_description": "SEO meta description in English (max 150 chars)",
+  "title_hi": "आकर्षक हिंदी शीर्षक",
+  "content_hi": "2-3 रोचक हिंदी पैराग्राफ (200 शब्दों से कम)"
+}}"""
+
     payload = {
         "model": "llama-3.1-8b-instant",
         "messages": [{"role": "user", "content": prompt}],
         "response_format": {"type": "json_object"},
         "temperature": 0.7,
-        "max_tokens": 1024
+        "max_tokens": 1500
     }
 
     for attempt in range(1, 4):
         try:
-            res = requests.post(url, json=payload, headers=headers, timeout=20)
+            res = requests.post(url, json=payload, headers=headers, timeout=25)
             if res.status_code == 200:
-                data = res.json()
-                content_text = data['choices'][0]['message']['content'].strip()
-                parsed_data = json.loads(content_text)
-                return parsed_data.get("title"), parsed_data.get("content"), parsed_data.get("seo_description")
+                data = json.loads(res.json()['choices'][0]['message']['content'])
+                return (
+                    data.get("title_en", original_title),
+                    data.get("content_en", original_content),
+                    data.get("seo_description", ""),
+                    data.get("title_hi", original_title),
+                    data.get("content_hi", "")
+                )
             elif res.status_code == 429:
-                print(f"[Rate Limited] Groq 429. Attempt {attempt} of 3. Waiting 15 seconds to cool down...")
-                time.sleep(15)
+                print(f"  [Groq] Rate limited. Waiting 20s... (attempt {attempt}/3)")
+                time.sleep(20)
             else:
-                raise Exception(f"Groq API returned HTTP {res.status_code}: {res.text}")
+                print(f"  [Groq] Error {res.status_code}: {res.text[:100]}")
+                break
         except Exception as e:
-            print(f"Error on Groq API call (attempt {attempt}/3): {e}")
-            if attempt < 3:
-                time.sleep(5)
-            
-    print("All Groq API rewrite attempts failed. Falling back to original content.")
-    return original_title, original_content, f"Latest news about {original_title} for {category} enthusiasts."
+            print(f"  [Groq] Exception attempt {attempt}: {e}")
+            time.sleep(5)
 
-def upload_to_cloudinary(image_url):
-    """Uploads the source image to Cloudinary and returns a secure optimized CDN URL."""
-    if not image_url:
-        return None
-    if not (CLOUDINARY_NAME and CLOUDINARY_API_KEY and CLOUDINARY_SECRET):
-        print("[Skipping Cloudinary] Credentials are not configured in .env.")
-        return image_url # Fallback to original image URL
+    print("  [Groq] All attempts failed. Using original content.")
+    return original_title, original_content, original_content[:120], original_title, ""
 
-    try:
-        print(f"Uploading image to Cloudinary: {image_url}")
-        res = cloudinary.uploader.upload(
-            image_url,
-            folder="aether_news",
-            transformation=[
-                {"width": 800, "crop": "limit"},
-                {"quality": "auto"},
-                {"fetch_format": "auto"}
-            ]
-        )
-        return res.get("secure_url")
-    except Exception as e:
-        print(f"Error uploading image to Cloudinary: {e}")
-        return image_url
+# ── Duplicate check ────────────────────────────────────────
+def is_duplicate(source_url):
+    # Check Supabase
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            encoded = urllib.parse.quote(source_url, safe='')
+            r = requests.get(
+                f"{SUPABASE_URL.rstrip('/')}/rest/v1/posts?source_url=eq.{encoded}&select=id",
+                headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"},
+                timeout=10
+            )
+            if r.status_code == 200 and len(r.json()) > 0:
+                return True
+        except Exception as e:
+            print(f"  Supabase dup check error: {e}")
 
-def send_telegram_notification(title, url):
-    """Sends a notification about the new post to a Telegram Channel."""
-    if not (TELEGRAM_TOKEN and TELEGRAM_CHAT_ID):
-        print("[Skipping Telegram] Token or Chat ID not configured in .env.")
-        return
+    # Check local posts.json
+    if os.path.exists("posts.json"):
+        try:
+            with open("posts.json", "r", encoding="utf-8") as f:
+                posts = json.load(f)
+            if any(p.get("sourceUrl") == source_url or p.get("source_url") == source_url for p in posts):
+                return True
+        except:
+            pass
+    return False
 
-    text = f"🚨 *New Article Published!*\n\n*Title:* {title}\n\n🔗 [Read Full Post]({url})"
-    api_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    
-    try:
-        res = requests.post(api_url, json={
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": text,
-            "parse_mode": "Markdown"
-        }, timeout=10)
-        if res.status_code == 200:
-            print("Telegram notification dispatched successfully.")
-        else:
-            print(f"Telegram returned error code {res.status_code}: {res.text}")
-    except Exception as e:
-        print(f"Error sending Telegram notification: {e}")
-
-def push_to_supabase(title, content, image_url, category, seo_description, source_url, video_url=None):
-    """Pushes a new post record into Supabase PostgreSQL database using REST API."""
+# ── Save to Supabase ───────────────────────────────────────
+def push_to_supabase(title_en, content_en, title_hi, content_hi, image_url,
+                      category, seo_description, source_url, video_url=None):
     if not (SUPABASE_URL and SUPABASE_KEY):
-        print("[Skipping Supabase] Credentials not configured in .env.")
-        save_fallback_locally(title, content, image_url, category, seo_description, source_url, video_url)
+        save_fallback_locally(title_en, content_en, title_hi, content_hi,
+                               image_url, category, seo_description, source_url, video_url)
         return
 
     headers = {
@@ -263,153 +223,173 @@ def push_to_supabase(title, content, image_url, category, seo_description, sourc
         "Prefer": "return=representation"
     }
 
+    payload = {
+        "title": title_en,
+        "title_hi": title_hi,
+        "content": content_en,
+        "content_hi": content_hi,
+        "image_url": image_url,
+        "category": category,
+        "seo_description": seo_description,
+        "source_url": source_url,
+    }
+    if video_url:
+        payload["video_url"] = video_url
+
     try:
-        # Check if source_url already exists to prevent duplicate entries
-        encoded_url = urllib.parse.quote(source_url)
-        check_url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/posts?source_url=eq.{encoded_url}&select=id"
-        check_res = requests.get(check_url, headers=headers, timeout=10)
-        
-        if check_res.status_code == 200 and len(check_res.json()) > 0:
-            print(f"Article already exists in Supabase. Skipping: {title}")
-            return
+        res = requests.post(f"{SUPABASE_URL.rstrip('/')}/rest/v1/posts",
+                            json=payload, headers=headers, timeout=15)
 
-        payload = {
-            "title": title,
-            "content": content,
-            "image_url": image_url,
-            "category": category,
-            "seo_description": seo_description,
-            "source_url": source_url
-        }
-        if video_url:
-            payload["video_url"] = video_url
+        # Retry without Hindi fields if column missing
+        if res.status_code == 400:
+            print("  [Supabase] Retry without Hindi columns...")
+            payload_simple = {k: v for k, v in payload.items() if k not in ("title_hi", "content_hi")}
+            res = requests.post(f"{SUPABASE_URL.rstrip('/')}/rest/v1/posts",
+                                json=payload_simple, headers=headers, timeout=15)
 
-        insert_url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/posts"
-        res = requests.post(insert_url, json=payload, headers=headers, timeout=10)
-        
-        # If insertion fails with 400 because video_url doesn't exist in the current Supabase schema
-        if res.status_code == 400 and "video_url" in payload:
-            print("[Warning] Supabase insert failed. 'video_url' column might be missing. Retrying without 'video_url'...")
-            del payload["video_url"]
-            res = requests.post(insert_url, json=payload, headers=headers, timeout=10)
-
-        if res.status_code not in (200, 201):
-            raise Exception(f"Supabase REST error: {res.status_code} - {res.text}")
-            
-        print(f"Inserted post into Supabase successfully.")
-        
-        # Dispatch notifications
-        res_data = res.json()
-        site_url = os.getenv("NEXT_PUBLIC_SITE_URL", "https://localhost:3000")
-        if len(res_data) > 0:
-            inserted_id = res_data[0].get("id")
-            post_link = f"{site_url}/post/{inserted_id}"
-            send_telegram_notification(title, post_link)
-
+        if res.status_code in (200, 201):
+            print(f"  ✅ Saved to Supabase: {title_en[:60]}")
+            rdata = res.json()
+            site_url = os.getenv("NEXT_PUBLIC_SITE_URL", "https://aether-news.vercel.app")
+            if rdata and rdata[0].get("id"):
+                send_telegram(title_en, f"{site_url}/post/{rdata[0]['id']}")
+        else:
+            print(f"  ⚠️ Supabase error {res.status_code}: {res.text[:150]}")
+            save_fallback_locally(title_en, content_en, title_hi, content_hi,
+                                   image_url, category, seo_description, source_url, video_url)
     except Exception as e:
-        print(f"Error saving to Supabase: {e}")
-        save_fallback_locally(title, content, image_url, category, seo_description, source_url, video_url)
+        print(f"  Supabase push failed: {e}")
+        save_fallback_locally(title_en, content_en, title_hi, content_hi,
+                               image_url, category, seo_description, source_url, video_url)
 
-def save_fallback_locally(title, content, image_url, category, seo_description, source_url, video_url=None):
-    """Writes to local posts.json as a fallback database if Supabase is offline."""
-    print("Writing post to local fallback database (posts.json)...")
-    fallback_file = "posts.json"
+# ── Save to posts.json fallback ────────────────────────────
+def save_fallback_locally(title_en, content_en, title_hi, content_hi,
+                           image_url, category, seo_description, source_url, video_url=None):
+    print("  Writing to posts.json fallback...")
     posts = []
-    if os.path.exists(fallback_file):
+    if os.path.exists("posts.json"):
         try:
-            with open(fallback_file, 'r', encoding='utf-8') as f:
+            with open("posts.json", "r", encoding="utf-8") as f:
                 posts = json.load(f)
-        except Exception:
+        except:
             posts = []
 
-    # Check duplicate
-    if any(p.get('sourceUrl') == source_url for p in posts):
+    if any(p.get("sourceUrl") == source_url for p in posts):
+        print("  Duplicate in posts.json — skipping.")
         return
 
-    post_item = {
-        "id": str(len(posts) + 1),
-        "title": title,
+    # Find max existing ID
+    max_id = 0
+    for p in posts:
+        try:
+            max_id = max(max_id, int(p.get("id", 0)))
+        except:
+            pass
+
+    entry = {
+        "id": str(max_id + 1),
+        "title": title_en,
+        "title_hi": title_hi,
         "category": category,
         "date": datetime.now().strftime("%Y-%m-%d"),
         "summary": seo_description,
-        "content": content,
+        "content": content_en,
+        "content_hi": content_hi,
         "imageUrl": image_url,
-        "sourceUrl": source_url
+        "sourceUrl": source_url,
     }
     if video_url:
-        post_item["videoUrl"] = video_url
+        entry["videoUrl"] = video_url
 
-    posts.insert(0, post_item)
-    with open(fallback_file, 'w', encoding='utf-8') as f:
-        json.dump(posts[:50], f, indent=2, ensure_ascii=False)
+    posts.insert(0, entry)
+    with open("posts.json", "w", encoding="utf-8") as f:
+        json.dump(posts[:60], f, indent=2, ensure_ascii=False)
+    print(f"  ✅ Saved to posts.json (id={entry['id']}): {title_en[:60]}")
 
+# ── Telegram notification ──────────────────────────────────
+def send_telegram(title, url):
+    if not (TELEGRAM_TOKEN and TELEGRAM_CHAT_ID):
+        return
+    try:
+        msg = f"🎮 *New Post!*\n\n*{title}*\n\n🔗 [Read Article]({url})"
+        requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+            json={"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "Markdown"},
+            timeout=10
+        )
+    except Exception as e:
+        print(f"  Telegram error: {e}")
+
+# ── Main pipeline ──────────────────────────────────────────
 def run_pipeline():
-    print("========================================")
-    print("Starting Automated News Pipeline Run...")
-    print("========================================")
+    print("=" * 50)
+    print("  AetherNews Auto-Scraper Starting...")
+    print("=" * 50)
+
+    total_saved = 0
 
     for feed_info in FEEDS:
-        feed_url = feed_info["url"]
-        category = feed_info["category"]
-        
-        print(f"\nProcessing feed: {feed_url}")
-        feed = feedparser.parse(feed_url)
-        
-        # Scrape top 6 entries per feed to compile a rich catalog of posts
-        for entry in feed.entries[:6]:
-            source_url = entry.get('link')
-            title = entry.get('title')
-            
-            # Check duplicate BEFORE making any API calls (Cloudinary / Groq)
-            if is_duplicate(source_url):
-                print(f"Article already exists. Skipping: {title}")
+        feed_url  = feed_info["url"]
+        category  = feed_info["category"]
+        print(f"\n📡 Feed: {feed_url[:70]}")
+
+        try:
+            feed = feedparser.parse(feed_url)
+        except Exception as e:
+            print(f"  Feed parse error: {e}")
+            continue
+
+        for entry in feed.entries[:5]:
+            source_url = entry.get("link", "")
+            raw_title  = entry.get("title", "Untitled")
+            raw_body   = re.sub(r"<[^>]+>", "", entry.get("summary", "") or entry.get("description", ""))
+
+            if not source_url:
                 continue
-                
-            content = entry.get('summary', '') or entry.get('description', '')
-            
-            # Clean up HTML tags from text contents
-            clean_content = re.sub(r'<[^>]+>', '', content)
-            
-            print(f"\nProcessing new post: {title}")
-            
-            # 1. Image extraction & Cloudinary upload (with category fallback)
-            raw_img = extract_image_url(entry)
-            if not raw_img:
-                raw_img = get_fallback_image(category)
-                print(f"No image in RSS feed. Assigned fallback Unsplash image: {raw_img}")
-                
-            cloudinary_img = upload_to_cloudinary(raw_img)
-            
-            # 2. Groq Llama AI Rewriter & Meta Tag Optimization
-            new_title, rewritten_body, seo_meta = rewrite_with_groq(title, clean_content, category)
-            
-            # 2.5 Fetch YouTube Video for Gaming/AI categories
+
+            print(f"\n  → {raw_title[:70]}")
+
+            if is_duplicate(source_url):
+                print("    [SKIP] Already exists.")
+                continue
+
+            # 1. Get image — always guaranteed
+            image_url = extract_image_url(entry) or get_fallback_image(category)
+            image_url = upload_to_cloudinary(image_url) or image_url
+            print(f"    Image: {image_url[:60]}...")
+
+            # 2. AI Rewrite in English + Hindi
+            print("    Rewriting with Groq AI (EN + HI)...")
+            title_en, content_en, seo_desc, title_hi, content_hi = rewrite_bilingual(
+                raw_title, raw_body, category
+            )
+
+            # 3. YouTube video for Gaming/AI
             video_url = None
             if category in ("Gaming", "AI"):
-                if category == "Gaming":
-                    video_query = f"{new_title} gameplay trailer"
-                else:
-                    video_query = f"{new_title} news overview"
-                video_url = fetch_youtube_video(video_query)
-            
-            # 3. Save to database (Supabase / local fallback)
+                video_url = fetch_youtube_video(title_en)
+
+            # 4. Save
             push_to_supabase(
-                title=new_title,
-                content=rewritten_body,
-                image_url=cloudinary_img,
+                title_en=title_en,
+                content_en=content_en,
+                title_hi=title_hi,
+                content_hi=content_hi,
+                image_url=image_url,
                 category=category,
-                seo_description=seo_meta,
+                seo_description=seo_desc,
                 source_url=source_url,
-                video_url=video_url
+                video_url=video_url,
             )
-            
-            # 4. Pace requests to avoid Groq rate limit (TPM/RPM limits)
-            print("Pacing pipeline, sleeping for 2 seconds...")
-            time.sleep(2)
+            total_saved += 1
 
-    print("\n========================================")
-    print("News Pipeline Run Finished.")
-    print("========================================")
+            # 5. Rate limit pause
+            print("    Pausing 3s...")
+            time.sleep(3)
 
-if __name__ == '__main__':
+    print(f"\n{'=' * 50}")
+    print(f"  Pipeline Done! Saved {total_saved} new posts.")
+    print("=" * 50)
+
+if __name__ == "__main__":
     run_pipeline()

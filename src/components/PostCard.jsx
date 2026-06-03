@@ -51,6 +51,10 @@ export default function PostCard({ post }) {
             alt={post.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=60";
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
         </div>

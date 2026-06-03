@@ -91,6 +91,10 @@ export default function Dashboard({ initialPosts }) {
                   src={post.image_url || post.imageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80"}
                   alt={post.title}
                   className="w-full h-full object-cover opacity-40 scale-105 transition-transform duration-10000 group-hover:scale-100"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80";
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />

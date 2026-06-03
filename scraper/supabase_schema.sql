@@ -3,12 +3,16 @@
 -- Run this in your Supabase SQL Editor to initialize the database table.
 -- ==========================================================================
 
+-- To add video_url to an existing posts table, run:
+-- ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS video_url TEXT;
+
 -- 1. Create the posts table
 CREATE TABLE IF NOT EXISTS public.posts (
     id BIGSERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     image_url TEXT,
+    video_url TEXT,
     category TEXT NOT NULL,
     seo_description TEXT,
     source_url TEXT UNIQUE NOT NULL,

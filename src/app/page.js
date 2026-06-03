@@ -40,6 +40,7 @@ async function getPosts() {
         title: post.title,
         content: post.content,
         image_url: post.imageUrl || post.image_url,
+        video_url: post.videoUrl || post.video_url || null,
         category: post.category,
         seo_description: post.summary || post.seo_description,
         created_at: post.date,

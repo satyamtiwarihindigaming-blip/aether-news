@@ -40,8 +40,33 @@ FEEDS = [
     {"url": "https://techcrunch.com/feed/", "category": "Tech"},
     {"url": "https://dev.to/feed/tag/ai", "category": "AI"},
     {"url": "https://dev.to/feed/tag/webdev", "category": "Dev"},
-    {"url": "https://dev.to/feed/tag/gamedev", "category": "Gaming"}
+    {"url": "https://www.pcgamer.com/rss/", "category": "Gaming"},
+    {"url": "https://feeds.feedburner.com/ign/news", "category": "Gaming"},
+    {"url": "https://news.google.com/rss/search?q=GTA+6+OR+%22Grand+Theft+Auto+6%22+OR+%22Grand+Theft+Auto+VI%22&hl=en-US&gl=US&ceid=US:en", "category": "Gaming"}
 ]
+
+def fetch_youtube_video(query):
+    """Scrapes YouTube search results for a video matching the query and returns the watch URL."""
+    try:
+        search_query = urllib.parse.quote(query)
+        url = f"https://www.youtube.com/results?search_query={search_query}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
+        print(f"Searching YouTube for: {query}")
+        res = requests.get(url, headers=headers, timeout=10)
+        if res.status_code == 200:
+            # Locate all videoId strings in the response HTML
+            video_ids = re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', res.text)
+            if video_ids:
+                video_url = f"https://www.youtube.com/watch?v={video_ids[0]}"
+                print(f"Found YouTube Video: {video_url} for query '{query}'")
+                return video_url
+    except Exception as e:
+        print(f"Error fetching YouTube video for query '{query}': {e}")
+    return None
+
 
 def extract_image_url(entry):
     """Attempts to extract an image from various RSS feed elements."""
@@ -224,11 +249,11 @@ def send_telegram_notification(title, url):
     except Exception as e:
         print(f"Error sending Telegram notification: {e}")
 
-def push_to_supabase(title, content, image_url, category, seo_description, source_url):
+def push_to_supabase(title, content, image_url, category, seo_description, source_url, video_url=None):
     """Pushes a new post record into Supabase PostgreSQL database using REST API."""
     if not (SUPABASE_URL and SUPABASE_KEY):
         print("[Skipping Supabase] Credentials not configured in .env.")
-        save_fallback_locally(title, content, image_url, category, seo_description, source_url)
+        save_fallback_locally(title, content, image_url, category, seo_description, source_url, video_url)
         return
 
     headers = {
@@ -256,9 +281,18 @@ def push_to_supabase(title, content, image_url, category, seo_description, sourc
             "seo_description": seo_description,
             "source_url": source_url
         }
+        if video_url:
+            payload["video_url"] = video_url
 
         insert_url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/posts"
         res = requests.post(insert_url, json=payload, headers=headers, timeout=10)
+        
+        # If insertion fails with 400 because video_url doesn't exist in the current Supabase schema
+        if res.status_code == 400 and "video_url" in payload:
+            print("[Warning] Supabase insert failed. 'video_url' column might be missing. Retrying without 'video_url'...")
+            del payload["video_url"]
+            res = requests.post(insert_url, json=payload, headers=headers, timeout=10)
+
         if res.status_code not in (200, 201):
             raise Exception(f"Supabase REST error: {res.status_code} - {res.text}")
             
@@ -274,9 +308,9 @@ def push_to_supabase(title, content, image_url, category, seo_description, sourc
 
     except Exception as e:
         print(f"Error saving to Supabase: {e}")
-        save_fallback_locally(title, content, image_url, category, seo_description, source_url)
+        save_fallback_locally(title, content, image_url, category, seo_description, source_url, video_url)
 
-def save_fallback_locally(title, content, image_url, category, seo_description, source_url):
+def save_fallback_locally(title, content, image_url, category, seo_description, source_url, video_url=None):
     """Writes to local posts.json as a fallback database if Supabase is offline."""
     print("Writing post to local fallback database (posts.json)...")
     fallback_file = "posts.json"
@@ -302,6 +336,9 @@ def save_fallback_locally(title, content, image_url, category, seo_description, 
         "imageUrl": image_url,
         "sourceUrl": source_url
     }
+    if video_url:
+        post_item["videoUrl"] = video_url
+
     posts.insert(0, post_item)
     with open(fallback_file, 'w', encoding='utf-8') as f:
         json.dump(posts[:50], f, indent=2, ensure_ascii=False)
@@ -346,6 +383,15 @@ def run_pipeline():
             # 2. Groq Llama AI Rewriter & Meta Tag Optimization
             new_title, rewritten_body, seo_meta = rewrite_with_groq(title, clean_content, category)
             
+            # 2.5 Fetch YouTube Video for Gaming/AI categories
+            video_url = None
+            if category in ("Gaming", "AI"):
+                if category == "Gaming":
+                    video_query = f"{new_title} gameplay trailer"
+                else:
+                    video_query = f"{new_title} news overview"
+                video_url = fetch_youtube_video(video_query)
+            
             # 3. Save to database (Supabase / local fallback)
             push_to_supabase(
                 title=new_title,
@@ -353,7 +399,8 @@ def run_pipeline():
                 image_url=cloudinary_img,
                 category=category,
                 seo_description=seo_meta,
-                source_url=source_url
+                source_url=source_url,
+                video_url=video_url
             )
             
             # 4. Pace requests to avoid Groq rate limit (TPM/RPM limits)

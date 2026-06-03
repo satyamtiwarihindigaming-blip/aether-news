@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, User } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
 import SafeImage from "@/components/SafeImage";
 import ThemeToggle from "@/components/ThemeToggle";
+import LiteYouTube from "@/components/LiteYouTube";
 
 export const revalidate = 3600; // ISR cache validation every hour
 
@@ -26,6 +27,7 @@ async function getAllPostsRaw() {
       title: post.title,
       content: post.content,
       image_url: post.imageUrl || post.image_url,
+      video_url: post.videoUrl || post.video_url || null,
       category: post.category,
       seo_description: post.summary || post.seo_description,
       created_at: post.date || post.created_at,
@@ -158,6 +160,11 @@ export default async function PostPage({ params }) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/30 to-transparent" />
           </div>
+
+          {/* YouTube Video Section if present */}
+          {post.video_url && (
+            <LiteYouTube videoUrl={post.video_url} title={post.title} />
+          )}
 
           {/* Body Article Content */}
           <div className="text-textSecondary text-base md:text-lg leading-relaxed font-light space-y-6">

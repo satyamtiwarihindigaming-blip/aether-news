@@ -1,9 +1,9 @@
-import fs from "fs/promises";
-import path from "path";
 import { supabase } from "@/lib/supabase";
 import Dashboard from "@/components/Dashboard";
+import localPostsData from "../../posts.json";
 
-export const revalidate = 3600; // ISR cache validation every hour
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 async function getPosts() {
   let isSupabaseActive = false;
@@ -27,15 +27,11 @@ async function getPosts() {
     }
   }
 
-  // Fallback: Read posts.json from root
+  // Fallback: Load from imported posts.json
   if (posts.length === 0) {
     try {
-      const filePath = path.join(process.cwd(), "posts.json");
-      const fileContents = await fs.readFile(filePath, "utf8");
-      
       // Map posts.json structure to match db column schemas (standardizing property keys)
-      const localData = JSON.parse(fileContents);
-      posts = localData.map(post => ({
+      posts = localPostsData.map(post => ({
         id: post.id,
         title: post.title,
         content: post.content,

@@ -149,7 +149,7 @@ Return ONLY this JSON (no extra text):
 }}"""
 
     payload = {
-        "model": "llama-3.1-8b-instant",
+        "model": "llama-3.3-70b-versatile",
         "messages": [{"role": "user", "content": prompt}],
         "response_format": {"type": "json_object"},
         "temperature": 0.7,
@@ -364,10 +364,8 @@ def run_pipeline():
                 raw_title, raw_body, category
             )
 
-            # 3. YouTube video for Gaming/AI
+            # 3. YouTube video disabled as requested ("video rahane de")
             video_url = None
-            if category in ("Gaming", "AI"):
-                video_url = fetch_youtube_video(title_en)
 
             # 4. Save
             push_to_supabase(

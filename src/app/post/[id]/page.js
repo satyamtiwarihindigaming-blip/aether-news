@@ -1,5 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +7,7 @@ import SafeImage from "@/components/SafeImage";
 import ThemeToggle from "@/components/ThemeToggle";
 import LiteYouTube from "@/components/LiteYouTube";
 import BilingualContent from "@/components/BilingualContent";
+import localPostsData from "../../../posts.json";
 
 export const revalidate = 3600; // ISR cache validation every hour
 
@@ -21,9 +20,7 @@ async function getAllPostsRaw() {
     } catch {}
   }
   try {
-    const filePath = path.join(process.cwd(), "posts.json");
-    const contents = await fs.readFile(filePath, "utf8");
-    return JSON.parse(contents).map(post => ({
+    return localPostsData.map(post => ({
       id: String(post.id),
       title: post.title,
       title_hi: post.title_hi || "",

@@ -4,7 +4,8 @@
 
 @layer base {
   body {
-    @apply bg-background text-textPrimary font-sans overflow-x-hidden min-h-screen relative;
+    @apply text-textPrimary font-sans overflow-x-hidden min-h-screen relative;
+    background: radial-gradient(circle at 50% 0%, #151624 0%, #07070a 100%) no-repeat fixed;
   }
 }
 

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import PostCard from "./PostCard";
 import { LayoutGrid, Sparkles, Code2, Globe, TrendingUp, Mail, BookOpen, ChevronLeft, ChevronRight, Gamepad2 } from "lucide-react";
-import ThreeBg from "./ThreeBg";
 
 export default function Dashboard({ initialPosts }) {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -60,8 +59,6 @@ export default function Dashboard({ initialPosts }) {
 
   return (
     <>
-      {/* Dynamic 3D background connected to state */}
-      <ThreeBg category={activeCategory} />
       {/* Header */}
       <header className="flex justify-between items-center py-6 border-b border-white/10 backdrop-blur-md">
         <div className="flex items-center gap-3">

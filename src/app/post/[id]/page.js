@@ -7,9 +7,10 @@ import SafeImage from "@/components/SafeImage";
 import ThemeToggle from "@/components/ThemeToggle";
 import LiteYouTube from "@/components/LiteYouTube";
 import BilingualContent from "@/components/BilingualContent";
-import localPostsData from "../../../posts.json";
+import localPostsData from "../../../../posts.json";
 
-export const revalidate = 3600; // ISR cache validation every hour
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // Fetch all posts helper for fallback operations
 async function getAllPostsRaw() {
@@ -39,15 +40,6 @@ async function getAllPostsRaw() {
   }
 }
 
-// Generate static params for Next.js build optimization
-export async function generateStaticParams() {
-  const posts = await getAllPostsRaw();
-  return posts.map((post) => ({
-    id: String(post.id),
-  }));
-}
-
-// Fetch single post
 async function getPost(id) {
   if (supabase) {
     try {

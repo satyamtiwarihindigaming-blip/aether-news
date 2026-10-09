@@ -1,12 +1,6 @@
-let resend = null;
-try {
-  const { Resend } = require("resend");
-  if (process.env.RESEND_API_KEY) {
-    resend = new Resend(process.env.RESEND_API_KEY);
-  }
-} catch (e) {
-  console.warn("Resend not available:", e.message);
-}
+import { Resend } from "resend";
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function POST(request) {
   try {
